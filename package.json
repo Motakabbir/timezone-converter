@@ -1,0 +1,29 @@
+{
+  "name": "timezone-converter",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "generate:icons": "node scripts/generate-pwa-icons.js"
+  },
+  "devDependencies": {
+    "@heroicons/vue": "^2.2.0",
+    "@nuxt/image": "^1.9.0",
+    "@nuxtjs/color-mode": "^3.5.2",
+    "@nuxtjs/tailwindcss": "^6.13.1",
+    "@pinia/nuxt": "^0.10.1",
+    "@types/luxon": "^3.4.2",
+    "@vueuse/core": "^12.7.0",
+    "luxon": "^3.5.0",
+    "nuxt": "latest",
+    "nuxt-simple-robots": "^4.0.1",
+    "nuxt-simple-sitemap": "^4.4.1"
+  },
+  "dependencies": {
+    "@vite-pwa/nuxt": "^0.10.6",
+    "web-vitals": "^3.5.0"
+  }
+}

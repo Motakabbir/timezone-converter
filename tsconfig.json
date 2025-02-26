@@ -1,0 +1,20 @@
+{
+  "extends": "./.nuxt/tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
+    "types": [
+      "@vite-pwa/nuxt",
+      "@pinia/nuxt",
+      "@nuxt/image",
+      "@vueuse/core"
+    ],
+    "paths": {
+      "~/*": ["./*"],
+      "@/*": ["./*"]
+    }
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
