@@ -20,10 +20,12 @@
     "luxon": "^3.5.0",
     "nuxt": "latest",
     "nuxt-simple-robots": "^4.0.1",
-    "nuxt-simple-sitemap": "^4.4.1"
+    "nuxt-simple-sitemap": "^4.4.1",
+    "vue-tsc": "^2.1.10"
   },
   "dependencies": {
     "@vite-pwa/nuxt": "^0.10.6",
+    "idb": "^7.1.1",
     "web-vitals": "^3.5.0"
   }
 }

@@ -8,6 +8,9 @@ export default defineNuxtConfig({
     'nuxt-simple-robots',
     '@vite-pwa/nuxt'
   ],
+
+  css: ['~/assets/css/main.css'],
+
   app: {
     head: {
       title: 'Time Zone Converter',
@@ -25,18 +28,22 @@ export default defineNuxtConfig({
       ]
     }
   },
+
   colorMode: {
     classSuffix: '',
     preference: 'system',
     fallback: 'light'
   },
+
   image: {
     quality: 80,
     format: ['webp']
   },
+
   site: {
     url: 'https://timezone-converter.com'
   },
+
   pwa: {
     registerType: 'autoUpdate',
     manifest: {
@@ -72,17 +79,20 @@ export default defineNuxtConfig({
       globPatterns: ['**/*.{js,css,html,png,svg,ico}']
     }
   },
+
   experimental: {
     payloadExtraction: true,
     renderJsonPayloads: true,
     viewTransition: true
   },
+
   routeRules: {
     '/': { prerender: true },
     '/about': { prerender: true },
     '/privacy': { prerender: true },
     '/terms': { prerender: true }
   },
+
   nitro: {
     prerender: {
       crawlLinks: true,
@@ -90,9 +100,11 @@ export default defineNuxtConfig({
     },
     compressPublicAssets: true
   },
+
   build: {
     transpile: ['luxon']
   },
+
   vite: {
     build: {
       cssMinify: true,
@@ -109,8 +121,11 @@ export default defineNuxtConfig({
       include: ['luxon', 'web-vitals']
     }
   },
+
   typescript: {
     strict: true,
     typeCheck: true
-  }
+  },
+
+  compatibilityDate: '2025-02-26'
 })

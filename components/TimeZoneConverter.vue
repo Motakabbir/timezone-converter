@@ -1,6 +1,18 @@
 <template>
   <ErrorBoundary>
-    <div class="max-w-3xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg animate-slide-in">
+    <div class="relative max-w-3xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg animate-slide-in">
+      <!-- Settings Button -->
+      <button
+        @click="showSettings = true"
+        class="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+        title="Settings"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+
       <!-- Analytics consent banner -->
       <div v-if="showAnalyticsConsent" class="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
         <div class="flex items-center justify-between">
@@ -103,6 +115,13 @@
       <div class="absolute bottom-4 right-4 text-sm text-gray-500 dark:text-gray-400">
         Press <kbd class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded">?</kbd> for shortcuts
       </div>
+
+      <!-- Settings Modal -->
+      <SettingsModal
+        :show="showSettings"
+        @close="showSettings = false"
+        @update="handleSettingsUpdate"
+      />
     </div>
     <Toast />
   </ErrorBoundary>
@@ -115,6 +134,7 @@ import { useTimeUpdate } from '~/composables/useTimeUpdate'
 import { useAnalytics } from '~/composables/useAnalytics'
 import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts'
 import { useToast } from '~/composables/useToast'
+import { useTimezoneCache } from '~/composables/useTimezoneCache'
 import type { TimezoneState } from '~/types/timezone'
 import type { KeyboardShortcut } from '~/types/keyboard'
 
@@ -125,6 +145,7 @@ const { currentTime } = useTimeUpdate()
 const { trackConversion, isAnalyticsEnabled } = useAnalytics()
 const { registerShortcut, shortcuts } = useKeyboardShortcuts()
 const { addToast } = useToast()
+const { getCachedTimezone, cacheTimezone } = useTimezoneCache()
 
 const sourceZone = ref(Intl.DateTimeFormat().resolvedOptions().timeZone)
 const targetZone = ref('UTC')
@@ -133,6 +154,9 @@ const sourceZoneError = ref('')
 const targetZoneError = ref('')
 const showAnalyticsConsent = ref(!localStorage.getItem('analytics-preference'))
 const showKeyboardHelp = ref(false)
+
+// Add settings state
+const showSettings = ref(false)
 
 // Analytics consent handlers
 const acceptAnalytics = () => {
@@ -148,7 +172,7 @@ const rejectAnalytics = () => {
 }
 
 // Add initial zones to recent list
-onMounted(() => {
+onMounted(async () => {
   validateAndAddTimezone(sourceZone.value)
   validateAndAddTimezone(targetZone.value)
 
@@ -181,6 +205,13 @@ onMounted(() => {
     },
     description: 'Set source to local timezone'
   })
+
+  // Cache initial timezones
+  await Promise.all([
+    cacheTimezone(sourceZone.value),
+    cacheTimezone(targetZone.value),
+    cacheTimezone('UTC') // Cache UTC as it's commonly used
+  ])
 })
 
 const validateAndAddTimezone = (timezone: string) => {
@@ -191,12 +222,13 @@ const validateAndAddTimezone = (timezone: string) => {
   return false
 }
 
-const handleSourceZoneChange = () => {
+const handleSourceZoneChange = async () => {
   sourceZoneError.value = $formatTimezoneError(sourceZone.value)
   if (!sourceZoneError.value) {
     validateAndAddTimezone(sourceZone.value)
-    // Track conversion when both zones are valid
+    localStorage.setItem('last-source-zone', sourceZone.value)
     if (!targetZoneError.value) {
+      await cacheTimezone(sourceZone.value)
       trackConversion(sourceZone.value, targetZone.value)
       addToast('Source timezone updated', 'info')
     }
@@ -205,17 +237,37 @@ const handleSourceZoneChange = () => {
   }
 }
 
-const handleTargetZoneChange = () => {
+const handleTargetZoneChange = async () => {
   targetZoneError.value = $formatTimezoneError(targetZone.value)
   if (!targetZoneError.value) {
     validateAndAddTimezone(targetZone.value)
-    // Track conversion when both zones are valid
+    localStorage.setItem('last-target-zone', targetZone.value)
     if (!sourceZoneError.value) {
+      await cacheTimezone(targetZone.value)
       trackConversion(sourceZone.value, targetZone.value)
       addToast('Target timezone updated', 'info')
     }
   } else {
     addToast(targetZoneError.value, 'error')
+  }
+}
+
+const handleSettingsUpdate = () => {
+  // Reload recent timezones
+  timezoneStore.$reset()
+  
+  // Update source and target zones from saved preferences
+  const savedSourceZone = localStorage.getItem('last-source-zone')
+  const savedTargetZone = localStorage.getItem('last-target-zone')
+  
+  if (savedSourceZone && sourceZone.value !== savedSourceZone) {
+    sourceZone.value = savedSourceZone
+    handleSourceZoneChange()
+  }
+  
+  if (savedTargetZone && targetZone.value !== savedTargetZone) {
+    targetZone.value = savedTargetZone
+    handleTargetZoneChange()
   }
 }
 
@@ -237,8 +289,21 @@ const currentTargetTime = computed(() => {
   }
 })
 
-const timezoneDifference = computed(() => {
+const timezoneDifference = computed(async () => {
   try {
+    const sourceCached = await getCachedTimezone(sourceZone.value)
+    const targetCached = await getCachedTimezone(targetZone.value)
+
+    if (sourceCached && targetCached) {
+      // Use cached offsets for quick calculation
+      const diff = targetCached.offset - sourceCached.offset
+      const hours = Math.abs(Math.floor(diff / 60))
+      const mins = Math.abs(diff % 60)
+      const sign = diff < 0 ? '-' : '+'
+      return `${sign}${hours}:${mins.toString().padStart(2, '0')} hours`
+    }
+
+    // Fallback to direct calculation if cache missed
     const sourceDt = DateTime.now().setZone(sourceZone.value)
     const targetDt = DateTime.now().setZone(targetZone.value)
     if (!sourceDt.isValid || !targetDt.isValid) return 'Invalid timezone'
@@ -256,10 +321,11 @@ const formatTimeZoneName = (zone: string) => {
   return zone.replace(/_/g, ' ')
 }
 
-const setTargetZone = (zone: string) => {
+const setTargetZone = async (zone: string) => {
   if (validateAndAddTimezone(zone)) {
     targetZone.value = zone
     targetZoneError.value = ''
+    await cacheTimezone(zone)
   } else {
     targetZoneError.value = $formatTimezoneError(zone)
   }
