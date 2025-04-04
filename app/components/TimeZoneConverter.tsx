@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Skeleton from './Skeleton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faExchangeAlt, faClock, faCalendarDay, faCloud, faTemperatureHigh, faTint, faWind, faPlane, faTrain, faCar, faBus, faBicycle, faPersonWalking, faLandmark, faHistory } from '@fortawesome/free-solid-svg-icons';
+import { faExchangeAlt, faClock, faCalendarDay, faCloud, faTemperatureHigh, faTint, faWind, faPlane, faTrain, faCar, faBus, faBicycle, faPersonWalking, faLandmark, faHistory, faMap } from '@fortawesome/free-solid-svg-icons';
+import dynamic from 'next/dynamic';
+import { getMapCoordinates, MapCoordinates } from '../utils/map';
 import { DateTime } from 'luxon';
 
 import { getAvailableTimezones } from '../utils/timezones';
@@ -10,10 +13,16 @@ import { getWeatherForTimezone, WeatherData } from '../utils/weather';
 import { getTravelInfo, TravelInfo } from '../utils/distance';
 import { getLandmarkInfo, LandmarkInfo } from '../utils/landmarks';
 
-// Get available timezones including user's timezone
-const AVAILABLE_TIMEZONES = getAvailableTimezones();
-
 export default function TimeZoneConverter() {
+  // Initialize timezones state
+  const [availableTimeZones, setAvailableTimeZones] = useState<string[]>([]);
+
+  // Load available timezones on component mount
+  useEffect(() => {
+    const timezones = getAvailableTimezones();
+    setAvailableTimeZones(timezones);
+  }, []);
+
   const [sourceTime, setSourceTime] = useState('');
   const [sourceDate, setSourceDate] = useState('');
   const [sourceTimeZone, setSourceTimeZone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
@@ -22,20 +31,34 @@ export default function TimeZoneConverter() {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [travelInfo, setTravelInfo] = useState<TravelInfo | null>(null);
   const [landmarkInfo, setLandmarkInfo] = useState<LandmarkInfo | null>(null);
+  // Dynamically import the Map component to avoid SSR issues with Leaflet
+  const Map = dynamic(() => import('./Map'), {
+    ssr: false,
+    loading: () => <Skeleton className="h-64 w-full rounded-lg" />
+  });
+
+  const [isLoading, setIsLoading] = useState({
+    weather: false,
+    travel: false,
+    landmarks: false,
+    map: false
+  });
+
+  const [mapCoordinates, setMapCoordinates] = useState<MapCoordinates | null>(null);
   const [isDST, setIsDST] = useState({ source: false, target: false });
-  const [availableTimeZones] = useState<string[]>(AVAILABLE_TIMEZONES);
+
   const [sourceSearch, setSourceSearch] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [targetSearch, setTargetSearch] = useState('Europe/London');
   const [sourceDropdownOpen, setSourceDropdownOpen] = useState(false);
   const [targetDropdownOpen, setTargetDropdownOpen] = useState(false);
 
-  // Filter timezones based on search input
-  const filteredSourceTimezones = availableTimeZones.filter(tz =>
-    tz.toLowerCase().includes(sourceSearch.toLowerCase())
-  );
-  const filteredTargetTimezones = availableTimeZones.filter(tz =>
-    tz.toLowerCase().includes(targetSearch.toLowerCase())
-  );
+  // Filter timezones based on search input with null checks
+  const filteredSourceTimezones = availableTimeZones?.filter(tz =>
+    tz.toLowerCase().includes(sourceSearch?.toLowerCase() || '')
+  ) || [];
+  const filteredTargetTimezones = availableTimeZones?.filter(tz =>
+    tz.toLowerCase().includes(targetSearch?.toLowerCase() || '')
+  ) || [];
 
   // Set default date and time on component mount
   useEffect(() => {
@@ -69,22 +92,48 @@ export default function TimeZoneConverter() {
       fetchWeatherData();
       updateTravelInfo();
       updateLandmarkInfo();
+      updateMapCoordinates();
     }
   }, [sourceDate, sourceTime, sourceTimeZone, targetTimeZone]);
 
+  const updateMapCoordinates = () => {
+    setIsLoading(prev => ({ ...prev, map: true }));
+    try {
+      const coordinates = getMapCoordinates(targetTimeZone);
+      setMapCoordinates(coordinates);
+    } finally {
+      setIsLoading(prev => ({ ...prev, map: false }));
+    }
+  };
+
   const updateTravelInfo = () => {
-    const travel = getTravelInfo(sourceTimeZone, targetTimeZone);
-    setTravelInfo(travel);
+    setIsLoading(prev => ({ ...prev, travel: true }));
+    try {
+      const travel = getTravelInfo(sourceTimeZone, targetTimeZone);
+      setTravelInfo(travel);
+    } finally {
+      setIsLoading(prev => ({ ...prev, travel: false }));
+    }
   };
 
   const updateLandmarkInfo = () => {
-    const landmarks = getLandmarkInfo(targetTimeZone);
-    setLandmarkInfo(landmarks);
+    setIsLoading(prev => ({ ...prev, landmarks: true }));
+    try {
+      const landmarks = getLandmarkInfo(targetTimeZone);
+      setLandmarkInfo(landmarks);
+    } finally {
+      setIsLoading(prev => ({ ...prev, landmarks: false }));
+    }
   };
 
   const fetchWeatherData = async () => {
-    const weather = await getWeatherForTimezone(targetTimeZone);
-    setWeatherData(weather);
+    setIsLoading(prev => ({ ...prev, weather: true }));
+    try {
+      const weather = await getWeatherForTimezone(targetTimeZone);
+      setWeatherData(weather);
+    } finally {
+      setIsLoading(prev => ({ ...prev, weather: false }));
+    }
   };
   
   const checkDaylightSavingTime = () => {
@@ -168,7 +217,7 @@ export default function TimeZoneConverter() {
     <div className="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg p-8 max-w-4xl mx-auto border border-gray-100 dark:border-gray-700 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
       <h2 className="text-3xl font-bold mb-8 text-center text-gray-800 dark:text-white flex items-center justify-center gap-3">
         <FontAwesomeIcon icon={faClock} className="text-blue-500" />
-        Time Zone Converter
+        <span>Time Zone Converter</span>
       </h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
@@ -253,39 +302,27 @@ export default function TimeZoneConverter() {
                     })}
                   </div>
                 )}
-
               </div>
             </div>
           </div>
         </div>
-        
-        {/* Swap Button - Centered between panels */}
+
+        {/* Swap Button */}
         <button
           onClick={swapTimeZones}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:block hidden bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 p-3 rounded-full shadow-lg text-white hover:shadow-blue-500/20 hover:scale-110 transform transition-all duration-300 z-10"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:block hidden bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-10"
           aria-label="Swap time zones"
         >
-          <FontAwesomeIcon icon={faExchangeAlt} className="h-6 w-6" />
-          <span className="sr-only">Swap time zones</span>
+          <FontAwesomeIcon icon={faExchangeAlt} className="text-lg" />
         </button>
-        
+
         {/* Target Time Zone */}
         <div className="space-y-5 p-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-lg border border-gray-200/50 dark:border-gray-600/50 shadow-md hover:shadow-lg transition-all duration-300">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-              <FontAwesomeIcon icon={faCalendarDay} className="text-blue-500" />
-              Target
-            </h3>
-            <button
-              onClick={swapTimeZones}
-              className="md:hidden text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-2"
-              aria-label="Swap time zones"
-            >
-              <FontAwesomeIcon icon={faExchangeAlt} className="h-5 w-5" />
-              <span className="sr-only">Swap time zones</span>
-            </button>
-          </div>
-          
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+            <FontAwesomeIcon icon={faHistory} className="text-blue-500" />
+            Target
+          </h3>
+
           <div>
             <label htmlFor="targetTimeZone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Time Zone
@@ -307,7 +344,7 @@ export default function TimeZoneConverter() {
                 aria-autocomplete="list"
               />
               {targetDropdownOpen && (
-                <div 
+                <div
                   id="targetTimeZoneList"
                   className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto"
                   role="listbox"
@@ -333,170 +370,199 @@ export default function TimeZoneConverter() {
                   })}
                 </div>
               )}
-
             </div>
           </div>
-          
+
           {convertedTime && (
-            <div className="mt-6 space-y-4">
-              <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-gray-800 dark:to-gray-700 rounded-lg border border-blue-200/50 dark:border-gray-600 shadow-inner">
-                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Converted Time</h4>
-                <div className="space-y-1">
-                  {convertedTime.split('\n').map((line, index) => (
-                    <p key={index} className="text-lg font-semibold text-gray-900 dark:text-white">{line}</p>
-                  ))}
-                </div>
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Converted Time:</h4>
+              <pre className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 font-mono">{convertedTime}</pre>
+            </div>
+          )}
+
+          {/* Weather Information */}
+          {weatherData && !isLoading.weather && (
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                <FontAwesomeIcon icon={faCloud} className="text-blue-500" />
+                Weather
+              </h4>
+              <div className="space-y-2">
+                <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <FontAwesomeIcon icon={faTemperatureHigh} className="text-blue-500" />
+                  Temperature: {weatherData.temperature}°C
+                </p>
+                <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <FontAwesomeIcon icon={faTint} className="text-blue-500" />
+                  Humidity: {weatherData.humidity}%
+                </p>
+                <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <FontAwesomeIcon icon={faWind} className="text-blue-500" />
+                  Wind: {weatherData.windSpeed} km/h
+                </p>
               </div>
-              
-              {weatherData && (
-                <div className="p-4 bg-gradient-to-br from-sky-50 to-blue-50/50 dark:from-gray-900 dark:to-gray-800 rounded-lg border border-sky-200/50 dark:border-gray-600 shadow-md hover:shadow-lg transition-all duration-300">
-                  <h4 className="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-800 dark:text-gray-100">
-                    <FontAwesomeIcon icon={faCloud} className="text-blue-500" />
-                    Current Weather in {weatherData.location}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <FontAwesomeIcon icon={faTemperatureHigh} className="text-red-500" />
-                      <span>{weatherData.temperature}°C</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <FontAwesomeIcon icon={faTint} className="text-blue-500" />
-                      <span>{weatherData.humidity}% Humidity</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <FontAwesomeIcon icon={faWind} className="text-green-500" />
-                      <span>{weatherData.windSpeed} m/s Wind</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <img 
-                        src={`https://openweathermap.org/img/wn/${weatherData.icon}.png`}
-                        alt={weatherData.description}
-                        className="w-8 h-8"
-                      />
-                      <span className="capitalize">{weatherData.description}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+            </div>
+          )}
 
-              {travelInfo && (
-                <div className="mt-4 p-4 bg-gradient-to-br from-purple-50 to-blue-50/50 dark:from-gray-900 dark:to-gray-800 rounded-lg border border-purple-200/50 dark:border-gray-600 shadow-md hover:shadow-lg transition-all duration-300">
-                  <h4 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                    <FontAwesomeIcon icon={faPlane} className="text-purple-500" />
-                    Travel Information
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <FontAwesomeIcon icon={faPlane} />
-                      <span>By Air: {travelInfo.travelTimes.plane}h</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <FontAwesomeIcon icon={faTrain} />
-                      <span>By Train: {travelInfo.travelTimes.train}h</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <FontAwesomeIcon icon={faCar} />
-                      <span>By Car: {travelInfo.travelTimes.car}h</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <FontAwesomeIcon icon={faBus} />
-                      <span>By Bus: {travelInfo.travelTimes.bus}h</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <FontAwesomeIcon icon={faBicycle} />
-                      <span>By Bike: {travelInfo.travelTimes.bike}h</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <FontAwesomeIcon icon={faPersonWalking} />
-                      <span>Walking: {travelInfo.travelTimes.foot}h</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+          {/* Travel Information */}
+          {travelInfo && !isLoading.travel && (
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Travel Information</h4>
+              <div className="space-y-2">
+                <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                 <FontAwesomeIcon icon={faPlane} className="text-blue-500" />
+                  Flight: {travelInfo.travelTimes.plane} hours
+                </p>
+                <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <FontAwesomeIcon icon={faTrain} className="text-blue-500" />
+                  Train: {travelInfo.travelTimes.train} hours
+                </p>
+                <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <FontAwesomeIcon icon={faCar} className="text-blue-500" />
+                  Car: {travelInfo.travelTimes.car} hours
+                </p>
+                <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <FontAwesomeIcon icon={faBus} className="text-blue-500" />
+                  Bus: {travelInfo.travelTimes.bus} hours
+                </p>
+                <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <FontAwesomeIcon icon={faBicycle} className="text-blue-500" />
+                  Bicycle: {travelInfo.travelTimes.bike} hours
+                </p>
+                <p className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <FontAwesomeIcon icon={faPersonWalking} className="text-blue-500" />
+                  Walking: {travelInfo.travelTimes.foot} hours
+                </p>
+              </div>
+            </div>
+          )}
 
-              {landmarkInfo && (
-                <div className="mt-4 p-4 bg-gradient-to-br from-amber-50 to-yellow-50/50 dark:from-gray-900 dark:to-gray-800 rounded-lg border border-amber-200/50 dark:border-gray-600 shadow-md hover:shadow-lg transition-all duration-300">
-                  <h4 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                    <FontAwesomeIcon icon={faLandmark} className="text-amber-500" />
-                    Local Information
-                  </h4>
-                  
+          {/* Map Section */}
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+              <FontAwesomeIcon icon={faMap} className="text-blue-500" />
+              Location Map
+            </h4>
+            {isLoading.map ? (
+              <Skeleton className="h-64 w-full rounded-lg" />
+            ) : mapCoordinates ? (
+              <Map timezone={targetTimeZone} coordinates={mapCoordinates} />
+            ) : (
+              <div className="h-64 w-full rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                Map not available for this timezone
+              </div>
+            )}
+          </div>
+
+          {/* Landmark Information */}
+          {landmarkInfo && !isLoading.landmarks && (
+            <div className="mt-6 space-y-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+                <h3 className="text-2xl font-semibold mb-4 flex items-center">
+                  <FontAwesomeIcon icon={faLandmark} className="mr-2" />
+                  Cultural & Historical Information
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <h5 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Famous Places</h5>
-                      <div className="flex flex-wrap gap-2">
-                        {landmarkInfo.famousPlaces.map((place, index) => (
-                          <span key={index} className="px-3 py-1 bg-amber-100/50 dark:bg-amber-900/30 rounded-full text-sm text-gray-700 dark:text-gray-300">
-                            {place}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Cultural Significance</h5>
-                      <p className="text-gray-700 dark:text-gray-300">{landmarkInfo.culturalSignificance}</p>
-                    </div>
-
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Historical Facts</h5>
+                      <h4 className="text-lg font-semibold mb-2">Famous Places</h4>
                       <ul className="list-disc list-inside space-y-1">
-                        {landmarkInfo.historicalFacts.map((fact, index) => (
-                          <li key={index} className="text-gray-700 dark:text-gray-300 text-sm">{fact}</li>
+                        {landmarkInfo.famousPlaces.map((place, index) => (
+                          <li key={index}>{place}</li>
                         ))}
                       </ul>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Population</h5>
-                        <p className="text-gray-700 dark:text-gray-300">{landmarkInfo.population}</p>
-                      </div>
-
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Food & Dining</h5>
-                        <ul className="list-disc list-inside space-y-1">
-                          {landmarkInfo.foodHabits.map((habit, index) => (
-                            <li key={index} className="text-gray-700 dark:text-gray-300 text-sm">{habit}</li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Local Customs</h5>
-                        <ul className="list-disc list-inside space-y-1">
-                          {landmarkInfo.localCustoms.map((custom, index) => (
-                            <li key={index} className="text-gray-700 dark:text-gray-300 text-sm">{custom}</li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Cultural Behavior</h5>
-                        <ul className="list-disc list-inside space-y-1">
-                          {landmarkInfo.culturalBehavior.map((behavior, index) => (
-                            <li key={index} className="text-gray-700 dark:text-gray-300 text-sm">{behavior}</li>
-                          ))}
-                        </ul>
-                      </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">Cultural Significance</h4>
+                      <p>{landmarkInfo.culturalSignificance}</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">Historical Facts</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        {landmarkInfo.historicalFacts.map((fact, index) => (
+                          <li key={index}>{fact}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">Population</h4>
+                      <p>{landmarkInfo.population}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">Architecture</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        {landmarkInfo.architecture.map((style, index) => (
+                          <li key={index}>{style}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">Museums</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        {landmarkInfo.museums.map((museum, index) => (
+                          <li key={index}>{museum}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">Natural Attractions</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        {landmarkInfo.naturalAttractions.map((attraction, index) => (
+                          <li key={index}>{attraction}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">Modern Landmarks</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        {landmarkInfo.modernLandmarks.map((landmark, index) => (
+                          <li key={index}>{landmark}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">Religious Places</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        {landmarkInfo.religiousPlaces.map((place, index) => (
+                          <li key={index}>{place}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-semibold mb-2">Seasonal Events</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        {landmarkInfo.seasonalEvents.map((event, index) => (
+                          <li key={index}>{event}</li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            </div>
+          )}
 
+          {/* Loading States */}
+          {(isLoading.weather || isLoading.travel || isLoading.landmarks) && (
+            <div className="space-y-4">
+              {isLoading.weather && <Skeleton className="h-32" />}
+              {isLoading.travel && <Skeleton className="h-48" />}
+              {isLoading.landmarks && <Skeleton className="h-32" />}
             </div>
           )}
         </div>
-      </div>
-      
-      {/* DST Information */}
-      <div className="mt-6 text-sm text-gray-600 dark:text-gray-400 bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 p-3 rounded-md shadow-sm">
-        <FontAwesomeIcon icon={faCalendarDay} className="mr-2 text-blue-500" />
-        <span>
-          {isDST.source && `${sourceTimeZone.replace('_', ' ')} is currently in Daylight Saving Time. `}
-          {isDST.target && `${targetTimeZone.replace('_', ' ')} is currently in Daylight Saving Time. `}
-          {!isDST.source && !isDST.target && 'Neither time zone is currently in Daylight Saving Time.'}
-        </span>
       </div>
     </div>
   );

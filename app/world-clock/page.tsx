@@ -1,11 +1,13 @@
-import TimeZoneConverter from "./components/TimeZoneConverter";
-import AdSense from "./components/AdSense";
+'use client';
 
-export default function Home() {
+import WorldClock from "../components/WorldClock";
+import AdSense from "../components/AdSense";
+
+export default function WorldClockPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
-        <TimeZoneConverter />
+        <WorldClock />
         <AdSense
           adSlot="1234567890"
           adFormat="horizontal"

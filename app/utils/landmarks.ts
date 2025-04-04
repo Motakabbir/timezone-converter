@@ -3,6 +3,9 @@ export interface BaseCulturalElements {
   culturalBehavior: string[];
   localCustoms: string[];
   foodHabits: string[];
+  festivals: string[];
+  languages: string[];
+  businessEtiquette: string[];
 }
 
 // Interface for landmark information
@@ -11,6 +14,12 @@ export interface LandmarkInfo extends BaseCulturalElements {
   culturalSignificance: string;
   historicalFacts: string[];
   population: string;
+  architecture: string[];
+  museums: string[];
+  naturalAttractions: string[];
+  modernLandmarks: string[];
+  religiousPlaces: string[];
+  seasonalEvents: string[];
 }
 
 // Common cultural patterns that can be mixed into specific locations
@@ -19,7 +28,20 @@ const commonCulturalPatterns: Partial<BaseCulturalElements> = {
     'Respect for traditions',
     'Community values',
     'Social etiquette',
-    'Cultural preservation'
+    'Cultural preservation',
+    'Environmental consciousness',
+    'Generational respect'
+  ],
+  businessEtiquette: [
+    'Professional dress code',
+    'Meeting punctuality',
+    'Business card exchange',
+    'Hierarchy awareness'
+  ],
+  languages: [
+    'Official language(s)',
+    'Common business languages',
+    'Local dialects'
   ]
 };
 
@@ -27,87 +49,310 @@ const commonCulturalPatterns: Partial<BaseCulturalElements> = {
 export const getLandmarkInfo = (timezone: string): LandmarkInfo | null => {
   const landmarkMapping: Record<string, LandmarkInfo> = {
     'Europe/London': {
-      famousPlaces: ['Big Ben', 'Tower Bridge', 'Buckingham Palace', 'Westminster Abbey'],
-      culturalSignificance: 'Historic center of the British Empire and modern global finance',
+      famousPlaces: ['Big Ben', 'Tower Bridge', 'Buckingham Palace', 'Westminster Abbey', 'St. Paul\'s Cathedral', 'London Eye', 'Hyde Park', 'Trafalgar Square'],
+      culturalSignificance: 'Historic center of the British Empire and modern global finance, arts, and innovation',
       historicalFacts: [
         'Big Ben was completed in 1859',
         'Tower Bridge opened in 1894',
-        'Westminster Abbey has hosted royal coronations since 1066'
+        'Westminster Abbey has hosted royal coronations since 1066',
+        'The Great Fire of London in 1666 reshaped the city',
+        'London Underground opened in 1863 as world\'s first underground railway',
+        'The Tower of London has served as palace, prison, and fortress since 1066'
       ],
       population: '9 million (Greater London)',
       foodHabits: [
         'Traditional fish and chips',
         'Full English breakfast',
         'Sunday roast tradition',
-        'Afternoon tea culture'
+        'Afternoon tea culture',
+        'Multicultural food scene',
+        'Street food markets',
+        'Curry houses in Brick Lane',
+        'Traditional pie and mash'
       ],
       localCustoms: [
         'Queuing etiquette',
         'Pub culture',
         'Bank holidays celebrations',
-        'Boxing Day shopping'
+        'Boxing Day shopping',
+        'Football match traditions',
+        'Royal celebrations',
+        'Guy Fawkes Night',
+        'Sunday markets'
       ],
       culturalBehavior: [
         'Reserved and polite demeanor',
         'Indirect communication style',
         'Strong sense of privacy',
-        'Punctuality valued'
+        'Punctuality valued',
+        'Multicultural tolerance',
+        'Weather small talk',
+        'Self-deprecating humor'
+      ],
+      architecture: [
+        'Gothic Revival (Houses of Parliament)',
+        'Baroque (St Paul\'s Cathedral)',
+        'Modern (The Shard)',
+        'Victorian terraced houses',
+        'Georgian squares'
+      ],
+      museums: [
+        'British Museum',
+        'Natural History Museum',
+        'Tate Modern',
+        'Victoria and Albert Museum',
+        'Science Museum'
+      ],
+      naturalAttractions: [
+        'Richmond Park',
+        'Hampstead Heath',
+        'River Thames',
+        'Royal Botanic Gardens, Kew',
+        'London Wetland Centre'
+      ],
+      modernLandmarks: [
+        'The Shard',
+        'Canary Wharf',
+        'The Gherkin',
+        'London Eye',
+        'O2 Arena'
+      ],
+      religiousPlaces: [
+        'St Paul\'s Cathedral',
+        'Westminster Abbey',
+        'Westminster Cathedral',
+        'East London Mosque',
+        'Bevis Marks Synagogue'
+      ],
+      seasonalEvents: [
+        'Notting Hill Carnival (August)',
+        'Wimbledon Tennis (June-July)',
+        'Chelsea Flower Show (May)',
+        'London Marathon (April)',
+        'Winter Wonderland (December)'
+      ],
+      festivals: [
+        'Notting Hill Carnival',
+        'London Fashion Week',
+        'BBC Proms',
+        'London Film Festival',
+        'London Pride'
+      ],
+      languages: [
+        'English (official)',
+        'Over 300 languages spoken',
+        'Major communities: Polish, Bengali, Gujarati'
+      ],
+      businessEtiquette: [
+        'Formal business attire',
+        'Punctuality is crucial',
+        'Email communication preferred',
+        'Professional titles until invited to use first names'
       ]
     },
     'America/New_York': {
-      famousPlaces: ['Statue of Liberty', 'Empire State Building', 'Times Square', 'Central Park'],
-      culturalSignificance: 'Global hub for finance, arts, and entertainment',
+      famousPlaces: ['Statue of Liberty', 'Empire State Building', 'Times Square', 'Central Park', 'Brooklyn Bridge', 'Metropolitan Museum of Art', 'Broadway Theater District', 'Wall Street'],
+      culturalSignificance: 'Global hub for finance, arts, entertainment, and cultural diversity',
       historicalFacts: [
         'Statue of Liberty was dedicated in 1886',
         'Empire State Building completed in 1931',
-        'Times Square became the city\'s entertainment hub in the 1900s'
+        'Times Square became the city\'s entertainment hub in the 1900s',
+        'Brooklyn Bridge opened in 1883',
+        'Wall Street crash of 1929',
+        'The city served as first US capital (1789-1790)'
       ],
-      population: '8.8 million (NYC)',
+      population: '8.8 million (NYC), 20.1 million (metropolitan area)',
       foodHabits: [
         'New York-style pizza',
         'Hot dog stands',
         'Bagels and lox',
-        'Food truck diversity'
+        'Food truck diversity',
+        'Diverse ethnic cuisines',
+        'Delis and diners',
+        'Fine dining scene',
+        'Food markets and halls'
       ],
       localCustoms: [
         'Fast-paced lifestyle',
         'Broadway shows',
         'Yankees baseball culture',
-        'Holiday shopping traditions'
+        'Holiday shopping traditions',
+        'Rooftop culture',
+        'Brunch culture',
+        'Street art appreciation',
+        'Park activities'
       ],
       culturalBehavior: [
         ...commonCulturalPatterns.culturalBehavior || [],
         'Direct communication style',
         'Work-driven culture',
-        'Cultural diversity celebration'
+        'Cultural diversity celebration',
+        'Fast walking pace',
+        'Time efficiency',
+        'Art appreciation'
+      ],
+      architecture: [
+        'Art Deco (Chrysler Building)',
+        'Gothic Revival (St. Patrick\'s Cathedral)',
+        'Modern (One World Trade Center)',
+        'Beaux-Arts (Grand Central Terminal)',
+        'Brownstone townhouses'
+      ],
+      museums: [
+        'Metropolitan Museum of Art',
+        'MoMA',
+        'American Museum of Natural History',
+        'Whitney Museum',
+        'Guggenheim Museum'
+      ],
+      naturalAttractions: [
+        'Central Park',
+        'High Line',
+        'Hudson River',
+        'Prospect Park',
+        'Jamaica Bay Wildlife Refuge'
+      ],
+      modernLandmarks: [
+        'One World Trade Center',
+        'Hudson Yards',
+        'Oculus Transportation Hub',
+        'High Line',
+        'New York Edge'
+      ],
+      religiousPlaces: [
+        'St. Patrick\'s Cathedral',
+        'Trinity Church',
+        'Temple Emanu-El',
+        'Abyssinian Baptist Church',
+        'Islamic Cultural Center'
+      ],
+      seasonalEvents: [
+        'New Year\'s Eve in Times Square',
+        'US Open Tennis (August-September)',
+        'NYC Marathon (November)',
+        'Shakespeare in the Park (Summer)',
+        'Holiday markets (December)'
+      ],
+      festivals: [
+        'New York Fashion Week',
+        'Tribeca Film Festival',
+        'NYC Pride',
+        'NYC Food & Wine Festival',
+        'Comic Con'
+      ],
+      languages: [
+        'English (official)',
+        'Spanish widely spoken',
+        'Chinese, Russian, Korean communities',
+        'Over 800 languages spoken'
+      ],
+      businessEtiquette: [
+        'Direct communication valued',
+        'Fast-paced meetings',
+        'Networking importance',
+        'Business casual to formal attire'
       ]
     },
     'Asia/Tokyo': {
-      famousPlaces: ['Tokyo Tower', 'Senso-ji Temple', 'Shibuya Crossing', 'Imperial Palace'],
-      culturalSignificance: 'Blend of traditional culture and modern technology',
+      famousPlaces: ['Tokyo Tower', 'Senso-ji Temple', 'Shibuya Crossing', 'Imperial Palace', 'Tokyo Skytree', 'Meiji Shrine', 'Akihabara', 'Tsukiji Outer Market'],
+      culturalSignificance: 'Unique fusion of ancient traditions with cutting-edge technology and pop culture',
       historicalFacts: [
         'Senso-ji is Tokyo\'s oldest temple, founded in 628 CE',
         'Tokyo Tower was completed in 1958',
-        'Shibuya Crossing became world\'s busiest pedestrian crossing'
+        'Shibuya Crossing became world\'s busiest pedestrian crossing',
+        'Edo (old Tokyo) became Japan\'s de facto capital in 1603',
+        'Great Kanto Earthquake of 1923 reshaped the city',
+        'Hosted Olympics in 1964 and 2020(2021)'
       ],
-      population: '37 million (Greater Tokyo)',
+      population: '37 million (Greater Tokyo), 14 million (Tokyo proper)',
       foodHabits: [
         'Sushi and sashimi culture',
         'Ramen shops',
         'Izakaya dining',
-        'Bento box lunches'
+        'Bento box lunches',
+        'Seasonal kaiseki cuisine',
+        'Street food (Yatai)',
+        'Tea ceremony traditions',
+        'Conveyor belt sushi'
       ],
       localCustoms: [
         'Bowing etiquette',
         'Removing shoes indoors',
         'Gift-giving culture',
-        'Cherry blossom viewing'
+        'Cherry blossom viewing',
+        'Summer festivals (Matsuri)',
+        'New Year traditions',
+        'Karaoke culture',
+        'Public bath (Onsen) etiquette'
       ],
       culturalBehavior: [
         ...commonCulturalPatterns.culturalBehavior || [],
         'Group harmony (wa)',
         'Punctuality importance',
-        'Respect for elders'
+        'Respect for elders',
+        'Omotenashi (hospitality)',
+        'Work ethic',
+        'Attention to detail'
+      ],
+      architecture: [
+        'Traditional temples and shrines',
+        'Modern skyscrapers',
+        'Capsule hotels',
+        'Traditional machiya houses',
+        'Contemporary design buildings'
+      ],
+      museums: [
+        'Tokyo National Museum',
+        'Ghibli Museum',
+        'Mori Art Museum',
+        'TeamLab Borderless',
+        'Edo-Tokyo Museum'
+      ],
+      naturalAttractions: [
+        'Mount Fuji view spots',
+        'Shinjuku Gyoen',
+        'Ueno Park',
+        'Imperial Palace Gardens',
+        'Sumida River'
+      ],
+      modernLandmarks: [
+        'Tokyo Skytree',
+        'Rainbow Bridge',
+        'Roppongi Hills',
+        'Tokyo Midtown',
+        'DiverCity Tokyo Plaza'
+      ],
+      religiousPlaces: [
+        'Meiji Shrine',
+        'Senso-ji Temple',
+        'Zojo-ji Temple',
+        'Yasukuni Shrine',
+        'Gotoku-ji Temple'
+      ],
+      seasonalEvents: [
+        'Cherry Blossom Season (March-April)',
+        'Sumida River Fireworks (July)',
+        'Tokyo Game Show (September)',
+        'Autumn Leaves Viewing (November)',
+        'New Year at Meiji Shrine'
+      ],
+      festivals: [
+        'Sanja Matsuri',
+        'Kanda Matsuri',
+        'Tokyo International Film Festival',
+        'Design Week',
+        'Anime Japan'
+      ],
+      languages: [
+        'Japanese (official)',
+        'English in business and tourism',
+        'Regional Tokyo dialect'
+      ],
+      businessEtiquette: [
+        'Formal business attire',
+        'Exchange of business cards (meishi)',
+        'After-work socializing (nomikai)',
+        'Hierarchical relationships'
       ]
     },
     'Europe/Paris': {

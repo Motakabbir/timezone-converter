@@ -6,6 +6,7 @@ import { faClock, faPlus, faTimes, faSun, faMoon } from '@fortawesome/free-solid
 import { DateTime } from 'luxon';
 
 import { getAvailableTimezones } from '../utils/timezones';
+import { getLandmarkInfo } from '../utils/landmarks';
 
 // Get available timezones including user's timezone
 const COMMON_TIMEZONES = getAvailableTimezones();
@@ -166,6 +167,27 @@ export default function WorldClock() {
                   </span>
                 )}
               </div>
+              
+              {/* Landmark Information */}
+              {(() => {
+                const landmarkInfo = getLandmarkInfo(clock.timezone);
+                if (landmarkInfo) {
+                  return (
+                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-gray-300">
+                        <p className="font-semibold mb-1">{landmarkInfo.culturalSignificance}</p>
+                        <p className="text-xs">Population: {landmarkInfo.population}</p>
+                        <div className="mt-2">
+                          <p className="text-xs font-medium mb-1">Famous Places:</p>
+                          <p className="text-xs">{landmarkInfo.famousPlaces.slice(0, 3).join(', ')}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
             </div>
           );
         })}
