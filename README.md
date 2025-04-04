@@ -10,21 +10,43 @@ A comprehensive timezone conversion and travel planning application built with N
 - **Travel Information**: Access weather data and cultural landmarks for destinations
 - **Distance Calculator**: Calculate travel distances between locations
 
+## Live Demo
+
+Visit [Timezone Converter](https://timezone-converter.vercel.app) to try out the application.
+
 ## Getting Started
 
-First, install the dependencies:
+### Prerequisites
+
+- Node.js 18.x or later
+- npm or yarn package manager
+
+### Installation
+
+1. Clone the repository
+
+```bash
+git clone https://github.com/yourusername/timezone-converter.git
+cd timezone-converter
+```
+
+2. Install dependencies
 
 ```bash
 npm install
+# or
+yarn install
 ```
 
-Then, run the development server:
+3. Start the development server
 
 ```bash
 npm run dev
+# or
+yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Tech Stack
 
@@ -40,8 +62,14 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
   - `/utils` - Utility functions for timezone, weather, and distance calculations
 - `/public` - Static assets and images
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The application is configured for easy deployment on Vercel:
 
-Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push your code to GitHub
+2. Import your repository to Vercel
+3. Vercel will automatically detect Next.js and deploy your application
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
